@@ -13,7 +13,6 @@ $result = $stmt->get_result();
 
 // access the result of the query, check if inputs matches only one record, and turn the result to an associative array to access the
 // 'username' and 'password' column
-
 if ($result->num_rows === 1) {
     $row = $result->fetch_assoc();
     $hashed_password = $row['password'];

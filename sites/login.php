@@ -1,8 +1,4 @@
 <?php
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
-
 require_once('../db/db_connection.php');
 include('../includes/sanitize.php');
 
@@ -19,14 +15,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $username = $_POST['username'];
         $password = $_POST['password']; // hassh the retrieved password
     }
-}
 
-if (empty($errors)) {
-    $_SESSION['username'] = sanitize_data($username, $conn); // sanitize input using a sanitize function in oblig3/includes/sanitize
-    $_SESSION['password'] = $password; // not necessary to sanitize password
-
-    include('../db/auth/verify_user.php');
-    $conn->close();    
+    if (empty($errors)) {
+        $_SESSION['username'] = sanitize_data($username, $conn); // sanitize input using a sanitize function in oblig3/includes/sanitize
+        $_SESSION['password'] = $password; // not necessary to sanitize password
+    
+        include('../db/auth/verify_user.php');
+        $conn->close();    
+    }
 }
 
 // checks if session variable 'isloggedin' is set, which is 'true' if correct login credentials in 'verify_user.php'

@@ -1,5 +1,27 @@
 <?php
+require_once('../db/db_connection.php');
+
 session_start();
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $errors = [];
+    $formData = [];
+    $fields = ['name', 'age', 'jobTitle', 'department', 'photoPath'];
+
+    foreach ($fields as $field) {
+        if (empty($_POST[$field])) {
+            $validationErrors[$field] = ucfirst($field) . " is required";
+        } else {
+            $formData[$field] = $_POST[$field];
+        }
+    }   
+
+    if (empty($errors)) {
+        foreach ($requiredFields as $field) {
+            $_SESSION[$field] = $formData[$field]; // assign values to $formData[key]
+        }
+    }
+}
 ?>
 
 <!DOCTYPE html>
@@ -7,7 +29,7 @@ session_start();
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Add</title>
+    <title>Add Employee</title>
 </head>
 <body>
     <nav>
@@ -22,18 +44,38 @@ session_start();
     } */
     ?>
 
-    <!-- add enctype="multipart/form-data" to allow file uploads--->
-    <form method="post" enctype="multipart/form-data">
-        <label for="name">Name:  </label><br>
-        <input type="text" id="name" name="name"><br>
-        <label for="age">Age: </label><br>
-        <input type="int" id="age" name="age"><br>
-        <label for="jobTitle">Job Title: </label><br>
-        <input type="text" id="jobTitle" name="jobTitle"><br>
-        <label for="department">Department: </label><br>
-        <input type="text" id="department" name="department"><br>
-        <input type="file" name="fileToUpload" id="fileToUpload"><br>
-        <input type="submit" name="Add Employee"><br>
-    </form>
+    
+    <h1>Employee List<h1>
+    <a href="../db/crud/create.php">Add Employee</a>
+    <span>List View</span>
+    <span>Card View</span>
+
+    <table>
+        <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Age</th>
+            <th>Job Title</th>
+            <th>Department</th>
+            <th>Actions</th>
+        </tr>    
+    <table>
+
+    <?php
+    require('../db/crud/read.php');
+        while ($row = $result->fetch_assoc()) {
+            echo "<tr>
+                <td>{$row['id']}</td>
+                <td>{$row['name']}</td>
+                <td>{$row['age']}</td>
+                <td>{$row['job_title']}</td>
+                <td>{$row['department']}</td>
+                <td><a href='../db/crud/edit.php?id={$row['id']}'>Edit</a> | <a href='./db/crud/delete.php?id={$row['id']}'>Delete</a></td>
+                <tr>";
+        };
+
+        $stmt->close();
+        $conn->close();
+    ?>
 </body>
 </html>
