@@ -1,5 +1,5 @@
 <?php
-require_once('../db/db_connection.php');
+require_once('../includes/db.php');
 include('../includes/sanitize.php');
 
 session_start();
@@ -29,7 +29,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 // redirects to ...
 if (isset($_SESSION['isloggedin'])) {
     if ($_SESSION['isloggedin']) {
-        header('Location: employees.php');
+        header('location: ../employee/index.php');
         exit();
     }
 }
@@ -50,7 +50,6 @@ if (isset($_SESSION['isloggedin'])) {
         <input type="text" id="username" name="username"><br>
         <label for="password">Password: </label><br>
         <input type="password" id="password" name="password"><br>
-        <input type="file" name="fileToUpload" id="fileToUpload">
         <input type="submit" value="Login">
     </form>
 </body>

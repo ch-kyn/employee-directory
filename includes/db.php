@@ -1,4 +1,5 @@
 <?php
+// establish connection to database 'corax'
 $servername = '127.0.0.1';
 $username = 'root';
 $password = '';

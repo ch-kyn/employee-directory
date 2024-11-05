@@ -4,6 +4,9 @@
 
 ```
 php test_admin.php
+sudo chmod 755 /opt/lampp/htdocs/school/oblig3/uploads
+sudo chown daemon:daemon /opt/lampp/htdocs/school/oblig3/uploads
+
 ```
 
 # Assumptions
