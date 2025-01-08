@@ -11,10 +11,13 @@ try {
 
 $result = $stmt->get_result();
 
+$_SESSION['errors'] = '';
+
 // access the result of the query, check if inputs matches only one record, and turn the result to an associative array to access the
 // 'username' and 'password' column
 if ($result->num_rows === 1) {
     $row = $result->fetch_assoc();
+    
     $hashed_password = $row['password'];
 
     if (password_verify($password, $hashed_password)) {
@@ -23,13 +26,14 @@ if ($result->num_rows === 1) {
         
         $_SESSION['username'] = $row['username'];
         $_SESSION['isloggedin'] = true;
+        // $_SESSION['user_id'] = $row['id'];
 
-        echo "Logged in successfully";
     } else {
-        echo "Invalid password";
+        $_SESSION['errors'] = "Invalid password";
     }
+    
 } else {
-    echo "Username not found"; // if non-match username, echo error message
+    $_SESSION['errors'] = "Username not found"; // if non-match username, echo error message
 }
 
 $stmt->close();

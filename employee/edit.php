@@ -3,6 +3,10 @@ require_once('../includes/db.php');
 require_once('../includes/session_check.php');
 include('../includes/sanitize.php');
 
+
+// edit the entry by pre-filling the form with the data retrieved from the matching ID passed to the URL
+// and update it when changing the values in the form in the subsequent POST request
+
 $errors = []; // collect custom errors
 
 // GET request through query string to the specific id ...
@@ -31,7 +35,8 @@ $formData = [
     'name' => $row['name'],
     'age' => $row['age'],
     'job_title' => $row['job_title'],
-    'department' => $row['department']
+    'department' => $row['department'],
+    'photo_path' => $row['photo_path']
 ];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -39,10 +44,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     foreach ($formData as $key => $value) {
         if (!empty($_POST[$key])) {
             $formData[$key] = sanitize_data($_POST[$key], $conn); // sanitize input
-        } else {
+        } elseif ($key !== 'photo_path') {
             $errors[] = ucfirst($key) . " is required.";
         }
     }
+
+       // similar to in delete.php, fetch the photo path from the database and delete from uploads/ using unlink
+       // but do this before uploading a new image to not store others' files on the server if not needed
+       $stmt = $conn->prepare("SELECT photo_path FROM employees WHERE id = ?");
+       $stmt->bind_param("i", $id);
+       $stmt->execute();
+       $stmt->bind_result($photo_path);
+       $stmt->fetch();
+       $stmt->close();
 
     if (empty($errors)) {
         // handle file upload exactly like in 'create.php'
@@ -66,20 +80,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
 
             if (empty($errors)) {
-                if (move_uploaded_file($_FILES["photo_path"]["tmp_name"], $target_file)) {
-                    $formData['photo_path'] = $target_file;
-                } else {
-                    $errors['photo_path'] = "Sorry, there was an error uploading your file.";
+                // checks if the row has an image associated with it, and delete when it exist
+                if (!empty($photo_path) && file_exists($photo_path)) {
+                    unlink($photo_path);
+
+                    if (move_uploaded_file($_FILES["photo_path"]["tmp_name"], $target_file)) {
+                        $formData['photo_path'] = $target_file;
+                    } else {
+                        $errors['photo_path'] = "Sorry, there was an error uploading your file.";
+                    }
                 }
             }
         }
 
-        // Prepare update statement
+        // prepare update statement
         $stmt = $conn->prepare("UPDATE employees SET name = ?, age = ?, job_title = ?, department = ?, photo_path = ? WHERE id = ?");
         $stmt->bind_param("sisssi", $formData['name'], $formData['age'], $formData['job_title'], $formData['department'], $formData['photo_path'], $id);
         
-        // Execute and check if successful
+        // execute and check if successful
         if ($stmt->execute()) {
+            $stmt->close();
+            $conn->close();
             header('location: index.php');
             exit();
         } else {
@@ -95,14 +116,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Edit Employee</title>
+    <link rel="stylesheet" href="../css/styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap"
+    rel="stylesheet" />
 </head>
 <body>
-    <h2>Edit Employee</h2>
+    <nav>
+        <span class="logo">Employee Directory</span>
+            <ul>
+                <li><a href="index.php">Home</a></li>
+                <li><a href="index.php?logout=true">Logout</a></li>
+            </ul>
+    </nav>
+
+    <div class="center">
+    <h1>Edit Employee</h1>
 
     <?php
-    // cisplay errors if they exist
+    // display errors if they exist
     if (!empty($errors)) {
-        echo '<ul>';
+        echo '<ul class="errors">';
         foreach ($errors as $error) {
             echo "<li>" . htmlspecialchars($error) . "</li>";
         }
@@ -112,17 +147,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     <form action="" method="post" enctype="multipart/form-data">
         <input type="hidden" name="id" value="<?php echo $row['id'];?>">
-        <label for="name">Name: </label><br>
-        <input type="text" id="name" name="name" value="<?php echo $formData['name'];?>"><br>
-        <label for="age">Age: </label><br>
-        <input type="number" id="age" name="age" value="<?php echo $formData['age'];?>"><br>
-        <label for="job_title">Job Title: </label><br>
-        <input type="text" id="job_title" name="job_title" value="<?php echo $formData['job_title'];?>"><br>
-        <label for="department">Department: </label><br>
-        <input type="text" id="department" name="department" value="<?php echo $formData['department'];?>"><br>
-        <label for="photo_path">Photo: </label><br>
-        <input type="file" name="photo_path" id="photo_path"><br>
-        <input type="submit" value="Update Employee"><br>
+        <label for="name">Name: </label>
+        <input type="text" id="name" name="name" value="<?php echo $formData['name'];?>">
+        <label for="age">Age: </label>
+        <input type="number" id="age" name="age" value="<?php echo $formData['age'];?>">
+        <label for="job_title">Job Title: </label>
+        <input type="text" id="job_title" name="job_title" value="<?php echo $formData['job_title'];?>">
+        <label for="department">Department: </label>
+        <input type="text" id="department" name="department" value="<?php echo $formData['department'];?>">
+        <label for="photo_path">Photo: </label>
+        <input type="file" name="photo_path" id="photo_path">
+        <input type="submit" value="Update Employee">
     </form>
+    </div>
 </body>
 </html>
